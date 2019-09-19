@@ -7,6 +7,7 @@
 #include <IGameObjectSystem.h>
 #include <IGameObject.h>
 #include "Components/Player/Player.h"
+#include "Schematyc/CoreEnv.h"
 
 
 // Included only once per DLL module.
@@ -62,6 +63,13 @@ void CSkyllaPlugin::OnSystemEvent(ESystemEvent event, UINT_PTR wparam, UINT_PTR 
 
 	case ESYSTEM_EVENT_REGISTER_SCHEMATYC_ENV:
 	{
+		// Register core environmental Schematyc code.
+		if (gEnv->pSchematyc)
+		{
+			gEnv->pSchematyc->GetEnvRegistry().RegisterPackage(
+				SCHEMATYC_MAKE_ENV_PACKAGE(g_coreEnvPackageGuid, "CoreEnv", "Skylla", "Core Schematyc environment", SCHEMATYC_DELEGATE(&RegisterCoreEnvPackage)));
+		}
+
 		// Register all components that belong to this plug-in
 		auto staticAutoRegisterLambda = [](Schematyc::IEnvRegistrar& registrar)
 		{

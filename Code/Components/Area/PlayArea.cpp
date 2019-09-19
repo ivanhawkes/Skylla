@@ -1,6 +1,6 @@
 #include "StdAfx.h"
 
-#include "SpawnPoint.h"
+#include "PlayArea.h"
 #include <CryCore/StaticInstanceList.h>
 #include "CrySchematyc/Env/Elements/EnvComponent.h"
 #include "CrySchematyc/Env/IEnvRegistrar.h"
@@ -8,16 +8,16 @@
 
 namespace Skylla
 {
-static void RegisterSpawnPointComponent(Schematyc::IEnvRegistrar& registrar)
+static void RegisterPlayAreaComponent(Schematyc::IEnvRegistrar& registrar)
 {
 	Schematyc::CEnvRegistrationScope scope = registrar.Scope(IEntity::GetEntityScopeGUID());
 	{
-		Schematyc::CEnvRegistrationScope componentScope = scope.Register(SCHEMATYC_MAKE_ENV_COMPONENT(CSpawnPointComponent));
+		Schematyc::CEnvRegistrationScope componentScope = scope.Register(SCHEMATYC_MAKE_ENV_COMPONENT(CPlayAreaComponent));
 		// Functions
 		{
 		}
 	}
 }
 
-CRY_STATIC_AUTO_REGISTER_FUNCTION(&RegisterSpawnPointComponent)
+CRY_STATIC_AUTO_REGISTER_FUNCTION(&RegisterPlayAreaComponent)
 }
