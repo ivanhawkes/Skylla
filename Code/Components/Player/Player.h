@@ -79,6 +79,7 @@ protected:
 		{
 			// Serialize the position with the 'wrld' compression policy
 			ser.Value("pos", position, 'wrld');
+
 			// Serialize the rotation with the 'ori0' compression policy
 			ser.Value("rot", rotation, 'ori0');
 		}

@@ -26,6 +26,7 @@ void CPlayerComponent::Initialize()
 {
 	// The character controller is responsible for maintaining player physics
 	m_pCharacterController = m_pEntity->GetOrCreateComponent<Cry::DefaultComponents::CCharacterControllerComponent>();
+
 	// Offset the default character controller up by one unit
 	m_pCharacterController->SetTransformMatrix(Matrix34::Create(Vec3(1.f), IDENTITY, Vec3(0, 0, 1.f)));
 
@@ -35,9 +36,9 @@ void CPlayerComponent::Initialize()
 	// Set the player geometry, this also triggers physics proxy creation
 	m_pAnimationComponent->SetMannequinAnimationDatabaseFile("Animations/Mannequin/ADB/FirstPerson.adb");
 	m_pAnimationComponent->SetCharacterFile("Objects/Characters/SampleCharacter/thirdperson.cdf");
-
 	m_pAnimationComponent->SetControllerDefinitionFile("Animations/Mannequin/ADB/FirstPersonControllerDefinition.xml");
 	m_pAnimationComponent->SetDefaultScopeContextName("FirstPersonCharacter");
+
 	// Queue the idle fragment to start playing immediately on next update
 	m_pAnimationComponent->SetDefaultFragmentName("Idle");
 
@@ -62,11 +63,13 @@ void CPlayerComponent::InitializeLocalPlayer()
 {
 	// Create the camera component, will automatically update the viewport every frame
 	m_pCameraComponent = m_pEntity->GetOrCreateComponent<Cry::DefaultComponents::CCameraComponent>();
+
 	// Get the input component, wraps access to action mapping so we can easily get callbacks when inputs are triggered
 	m_pInputComponent = m_pEntity->GetOrCreateComponent<Cry::DefaultComponents::CInputComponent>();
 
 	// Register an action, and the callback that will be sent when it's triggered
 	m_pInputComponent->RegisterAction("player", "moveleft", [this](int activationMode, float value) { HandleInputFlagChange(EInputFlag::MoveLeft, (EActionActivationMode)activationMode);  });
+
 	// Bind the 'A' key the "moveleft" action
 	m_pInputComponent->BindAction("player", "moveleft", eAID_KeyboardMouse, EKeyId::eKI_A);
 
@@ -138,52 +141,54 @@ void CPlayerComponent::ProcessEvent(const SEntityEvent& event)
 {
 	switch (event.event)
 	{
-	case Cry::Entity::EEvent::Reset:
-	{
-		const bool enteringGameMode = event.nParam[0] != 0;
-
-		// Check if we're entering game mode
-		if (enteringGameMode)
+		case Cry::Entity::EEvent::Reset:
 		{
-			SpawnCursorEntity();
+			const bool enteringGameMode = event.nParam[0] != 0;
+
+			// Check if we're entering game mode
+			if (enteringGameMode)
+			{
+				SpawnCursorEntity();
+			}
+			else
+			{
+				// Removed by Sandbox
+				m_pCursorEntity = nullptr;
+			}
 		}
-		else
+		break;
+
+		case Cry::Entity::EEvent::BecomeLocalPlayer:
 		{
-			// Removed by Sandbox
-			m_pCursorEntity = nullptr;
+			InitializeLocalPlayer();
 		}
-	}
-	break;
-	case Cry::Entity::EEvent::BecomeLocalPlayer:
-	{
-		InitializeLocalPlayer();
-	}
-	break;
-	case Cry::Entity::EEvent::Update:
-	{
-		// Don't update the player if we haven't spawned yet
-		if (!m_isAlive)
-			return;
+		break;
 
-		const float frameTime = event.fParam[0];
-
-		// Update the in-world cursor position
-		UpdateCursor(frameTime);
-
-		// Start by updating the movement request we want to send to the character controller
-		// This results in the physical representation of the character moving
-		UpdateMovementRequest(frameTime);
-
-		// Update the animation state of the character
-		UpdateAnimation(frameTime);
-
-		if (IsLocalClient())
+		case Cry::Entity::EEvent::Update:
 		{
-			// Update the camera component offset
-			UpdateCamera(frameTime);
+			// Don't update the player if we haven't spawned yet
+			if (!m_isAlive)
+				return;
+
+			const float frameTime = event.fParam[0];
+
+			// Update the in-world cursor position
+			UpdateCursor(frameTime);
+
+			// Start by updating the movement request we want to send to the character controller
+			// This results in the physical representation of the character moving
+			UpdateMovementRequest(frameTime);
+
+			// Update the animation state of the character
+			UpdateAnimation(frameTime);
+
+			if (IsLocalClient())
+			{
+				// Update the camera component offset
+				UpdateCamera(frameTime);
+			}
 		}
-	}
-	break;
+		break;
 	}
 }
 
@@ -379,7 +384,7 @@ void CPlayerComponent::OnReadyForGameplayOnServer()
 	Revive(newTransform);
 
 	// Invoke the RemoteReviveOnClient function on all remote clients, to ensure that Revive is called across the network
-	SRmi<RMI_WRAP(&CPlayerComponent::RemoteReviveOnClient)>::InvokeOnOtherClients(this, RemoteReviveParams{ newTransform.GetTranslation(), Quat(newTransform) });
+	SRmi<RMI_WRAP(&CPlayerComponent::RemoteReviveOnClient)>::InvokeOnOtherClients(this, RemoteReviveParams {newTransform.GetTranslation(), Quat(newTransform)});
 
 	// Go through all other players, and send the RemoteReviveOnClient on their instances to the new player that is ready for gameplay
 	const int channelId = m_pEntity->GetNetEntity()->GetChannelId();
@@ -395,7 +400,7 @@ void CPlayerComponent::OnReadyForGameplayOnServer()
 
 		// Revive this player on the new player's machine, on the location the existing player was currently at
 		const QuatT currentOrientation = QuatT(player.GetEntity()->GetWorldTM());
-		SRmi<RMI_WRAP(&CPlayerComponent::RemoteReviveOnClient)>::InvokeOnClient(&player, RemoteReviveParams{ currentOrientation.t, currentOrientation.q }, channelId);
+		SRmi<RMI_WRAP(&CPlayerComponent::RemoteReviveOnClient)>::InvokeOnClient(&player, RemoteReviveParams {currentOrientation.t, currentOrientation.q}, channelId);
 	});
 }
 
@@ -437,27 +442,27 @@ void CPlayerComponent::HandleInputFlagChange(const CEnumFlags<EInputFlag> flags,
 {
 	switch (type)
 	{
-	case EInputFlagType::Hold:
-	{
-		if (activationMode == eAAM_OnRelease)
+		case EInputFlagType::Hold:
 		{
-			m_inputFlags &= ~flags;
+			if (activationMode == eAAM_OnRelease)
+			{
+				m_inputFlags &= ~flags;
+			}
+			else
+			{
+				m_inputFlags |= flags;
+			}
 		}
-		else
+		break;
+		case EInputFlagType::Toggle:
 		{
-			m_inputFlags |= flags;
+			if (activationMode == eAAM_OnRelease)
+			{
+				// Toggle the bit(s)
+				m_inputFlags ^= flags;
+			}
 		}
-	}
-	break;
-	case EInputFlagType::Toggle:
-	{
-		if (activationMode == eAAM_OnRelease)
-		{
-			// Toggle the bit(s)
-			m_inputFlags ^= flags;
-		}
-	}
-	break;
+		break;
 	}
 
 	if (IsLocalClient())

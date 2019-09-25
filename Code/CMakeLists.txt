@@ -38,6 +38,18 @@ add_sources("Player_uber.cpp"
 		"Components/Player/Player.h"
 		"Components/Player/SpawnPoint.h"
 )
+add_sources("Projectile_uber.cpp"
+    PROJECTS Skylla
+    SOURCE_GROUP "Components\\\\Projectile"
+		"Components/Projectile/LaserComponent.cpp"
+		"Components/Projectile/MissileComponent.cpp"
+		"Components/Projectile/PlasmaComponent.cpp"
+		"Components/Projectile/ProjectileComponent.cpp"
+		"Components/Projectile/LaserComponent.h"
+		"Components/Projectile/MissileComponent.h"
+		"Components/Projectile/PlasmaComponent.h"
+		"Components/Projectile/ProjectileComponent.h"
+)
 add_sources("Weapon_uber.cpp"
     PROJECTS Skylla
     SOURCE_GROUP "Components\\\\Weapon"
